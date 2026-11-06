@@ -1,0 +1,76 @@
+x-app: &app
+  build: .
+  image: didban-prices:local
+  env_file: .env
+  environment: &environment
+    APP_MODE: live
+    DATABASE_URL: postgresql+psycopg://didban:${POSTGRES_PASSWORD:?Run scripts/bootstrap.py first}@postgres:5432/didban
+    REDIS_URL: redis://redis:6379/0
+    EMBEDDED_SCHEDULER: 'false'
+  restart: unless-stopped
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: didban
+      POSTGRES_USER: didban
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run scripts/bootstrap.py first}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U didban -d didban']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  redis:
+    image: redis:7-alpine
+    command: [redis-server, --appendonly, 'yes']
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  api:
+    <<: *app
+    ports:
+      - '127.0.0.1:8000:8000'
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  worker:
+    <<: *app
+    command: [celery, -A, backend.tasks.celery, worker, -Q, prices, --concurrency=1, --loglevel=INFO, --hostname=prices@%h]
+    depends_on:
+      api:
+        condition: service_healthy
+  discovery-worker:
+    <<: *app
+    command: [celery, -A, backend.tasks.celery, worker, -Q, discovery, --concurrency=1, --loglevel=INFO, --hostname=discovery@%h]
+    depends_on:
+      api:
+        condition: service_healthy
+  beat:
+    <<: *app
+    command: [celery, -A, backend.tasks.celery, beat, --loglevel=INFO, --schedule=/app/data/celerybeat-schedule]
+    volumes:
+      - beat-data:/app/data
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  redis-data:
+  beat-data:

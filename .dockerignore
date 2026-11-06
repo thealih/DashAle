@@ -1,0 +1,12 @@
+.venv
+.git
+.env
+data
+research
+tests
+test-results
+frontend/node_modules
+frontend/.next
+frontend/out
+snappshop-home.html
+*.log

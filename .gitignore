@@ -1,0 +1,26 @@
+.venv/
+node_modules/
+frontend/.next/
+frontend/out/
+data/
+.env
+.env.*
+!.env.example
+__pycache__/
+.pytest_cache/
+*.log
+research/
+snappshop-home.html
+test-results/
+*.tsbuildinfo
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.pdf
+# Local delivery archives, exported data and diagnostics are not source code.
+deliverables/*
+!deliverables/price-position.png
+!deliverables/delete-products.png
+!deliverables/VALIDATION.md
