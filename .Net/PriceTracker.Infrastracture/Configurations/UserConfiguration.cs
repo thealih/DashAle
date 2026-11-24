@@ -1,19 +1,19 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using PriceTracker.Domain.Models.Entities;
 
-namespace PriceTracker.Infrastracture.Configurations
+namespace PriceTracker.Infrastracture.Configurations;
+
+public class UserConfiguration : EntityTypeConfiguration<User>
 {
-    public class UserConfiguration : EntityTypeConfiguration<User>
+    protected override void AppendConfig(EntityTypeBuilder<User> builder)
     {
-        protected override void AppendConfig(EntityTypeBuilder<User> builder)
-        {
-            builder.Property(x => x.UserName).HasColumnType("varchar").HasMaxLength(100).IsRequired();
-        }
+        builder.ToTable("Users");
+        builder.Property(x => x.UserName)
+            .HasMaxLength(100)
+            .UseCollation("Latin1_General_100_CI_AS")
+            .IsRequired();
+        builder.Property(x => x.PasswordHash).HasMaxLength(512).IsRequired();
+        builder.HasIndex(x => x.UserName).IsUnique();
     }
 }

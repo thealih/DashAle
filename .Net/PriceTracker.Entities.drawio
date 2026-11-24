@@ -35,8 +35,8 @@
         <mxCell id="AppSetting" value="&lt;b style=&quot;font-size:16px&quot;&gt;AppSetting&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#475569&quot;&gt;Python: settings&lt;/font&gt;&lt;br&gt;&lt;br&gt;PK  Id : Guid (BaseEntity)&lt;br&gt;UQ  Key : string&lt;br&gt;Value : string" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=13;spacingTop=10;fontFamily=Arial;fontSize=13;fontColor=#0f172a;fillColor=#fef3c7;strokeColor=#64748b;" vertex="1" parent="1">
           <mxGeometry x="1170" y="480" width="315" height="111" as="geometry" />
         </mxCell>
-        <mxCell id="User" value="&lt;b style=&quot;font-size:16px&quot;&gt;User&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#475569&quot;&gt;Existing .NET template&lt;/font&gt;&lt;br&gt;&lt;br&gt;PK  Id : Guid (BaseEntity)&lt;br&gt;UserName : string" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=13;spacingTop=10;fontFamily=Arial;fontSize=13;fontColor=#0f172a;fillColor=#f1f5f9;strokeColor=#64748b;" vertex="1" parent="1">
-          <mxGeometry x="1170" y="650" width="315" height="94" as="geometry" />
+        <mxCell id="User" value="&lt;b style=&quot;font-size:16px&quot;&gt;User&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#475569&quot;&gt;Local user accounts&lt;/font&gt;&lt;br&gt;&lt;br&gt;PK  Id : Guid (BaseEntity)&lt;br&gt;UQ  UserName : string (case-insensitive)&lt;br&gt;PasswordHash : string&lt;br&gt;Role : UserRole (Viewer / Admin)&lt;br&gt;IsActive : bool" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=13;spacingTop=10;fontFamily=Arial;fontSize=13;fontColor=#0f172a;fillColor=#f1f5f9;strokeColor=#64748b;" vertex="1" parent="1">
+          <mxGeometry x="1170" y="650" width="315" height="155" as="geometry" />
         </mxCell>
         <mxCell id="Product-BrandId" value="BrandId" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;startArrow=ERmandOne;endArrow=ERzeroToMany;startFill=0;endFill=0;strokeColor=#475569;labelBackgroundColor=#ffffff;fontSize=11;exitX=1;exitY=0.35;entryX=0;entryY=0.35;" edge="1" parent="1" source="Brand" target="Product">
           <mxGeometry relative="1" as="geometry" />

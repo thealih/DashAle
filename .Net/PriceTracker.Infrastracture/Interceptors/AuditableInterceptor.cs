@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using PriceTracker.Domain.Models.Entities.Common;
+using PriceTracker.Domain.Models.Entities;
 using Microsoft.AspNetCore.Http;
 
 namespace PriceTracker.Infrastracture.Interceptors
@@ -46,22 +47,24 @@ namespace PriceTracker.Infrastracture.Interceptors
                 switch (entry.State)
                 {
                     case EntityState.Added:
-                        var now = DateTime.Now;
-                        entry.Entity.CreatedAt = now;
-                        entry.Entity.ModifiedAt = now;
-                        entry.Entity.CreatedBy = username;
-                        entry.Entity.IsDeleted = false;
+                        var now = DateTime.UtcNow;
+                        if (entry.Entity.CreatedAt == default)
+                            entry.Entity.CreatedAt = now;
+                        if (entry.Entity.ModifiedAt == default)
+                            entry.Entity.ModifiedAt = entry.Entity.CreatedAt;
+                        entry.Entity.CreatedBy ??= username;
                         break;
                     case EntityState.Modified:
-                        entry.Entity.ModifiedAt = DateTime.Now;
+                        entry.Entity.ModifiedAt = DateTime.UtcNow;
                         entry.Entity.ModifiedBy = username;
                         break;
                     case EntityState.Deleted:
                         if (entry.Entity.IsDeleted)
                         {
                             entry.State = EntityState.Modified;
-                            entry.Entity.IsDeleted = true;
-                            entry.Entity.ModifiedAt = DateTime.Now;
+                            if (entry.Entity is Product product)
+                                product.Archive(DateTime.UtcNow);
+                            entry.Entity.ModifiedAt = DateTime.UtcNow;
                             entry.Entity.ModifiedBy = username;
                         }
                         break;
