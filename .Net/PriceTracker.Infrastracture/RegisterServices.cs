@@ -3,8 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using PriceTracker.Domain.IRepositories;
 using PriceTracker.Domain.IRepositories.Common;
 using PriceTracker.Infrastracture.Interceptors;
+using PriceTracker.Infrastracture.Repositories;
 using PriceTracker.Infrastracture.Repositories.Common;
 
 namespace PriceTracker.Infrastracture
@@ -36,6 +38,17 @@ namespace PriceTracker.Infrastracture
 
             //register services
             services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+            services.AddScoped<IBrandRepository, BrandRepository>();
+            services.AddScoped<IProductRepository, ProductRepository>();
+            services.AddScoped<ISellerRepository, SellerRepository>();
+            services.AddScoped<ILatestOfferRepository, LatestOfferRepository>();
+            services.AddScoped<IPriceObservationRepository, PriceObservationRepository>();
+            services.AddScoped<INotificationRepository, NotificationRepository>();
+            services.AddScoped<IAppSettingRepository, AppSettingRepository>();
+            services.AddScoped<IDiscoveryTaskRepository, DiscoveryTaskRepository>();
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IUserSessionRepository, UserSessionRepository>();
+            services.AddScoped<IUserRefreshTokenRepository, UserRefreshTokenRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 

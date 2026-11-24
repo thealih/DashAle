@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using PriceTracker.Domain.Models.Entities.Common;
-using PriceTracker.Domain.Models.Entities;
 using Microsoft.AspNetCore.Http;
 
 namespace PriceTracker.Infrastracture.Interceptors
@@ -57,16 +56,6 @@ namespace PriceTracker.Infrastracture.Interceptors
                     case EntityState.Modified:
                         entry.Entity.ModifiedAt = DateTime.UtcNow;
                         entry.Entity.ModifiedBy = username;
-                        break;
-                    case EntityState.Deleted:
-                        if (entry.Entity.IsDeleted)
-                        {
-                            entry.State = EntityState.Modified;
-                            if (entry.Entity is Product product)
-                                product.Archive(DateTime.UtcNow);
-                            entry.Entity.ModifiedAt = DateTime.UtcNow;
-                            entry.Entity.ModifiedBy = username;
-                        }
                         break;
                 }
             }

@@ -1,144 +1,46 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
-using Microsoft.EntityFrameworkCore.Query;
-using PriceTracker.Domain.Paging;
+using Microsoft.EntityFrameworkCore;
 using PriceTracker.Domain.IRepositories.Common;
-using PriceTracker.Domain.Models.Enums;
+using PriceTracker.Domain.Models.Entities;
 using PriceTracker.Domain.Models.Entities.Common;
 
-namespace PriceTracker.Infrastracture.Repositories.Common
+namespace PriceTracker.Infrastracture.Repositories.Common;
+
+public class Repository<TEntity>(AppDbContext context) : KeyedRepository<TEntity, Guid>(context, x => x.Id),
+    IRepository<TEntity> where TEntity : BaseEntity
 {
-    public class Repository<EntityBase> : IRepository<EntityBase> where EntityBase : BaseEntity
+    public override IQueryable<TEntity> GetAllQueryableAsync(bool tracking = false) =>
+        base.GetAllQueryableAsync(tracking).OrderByDescending(x => x.CreatedAt);
+
+    public async Task<Guid> InsertAsync(TEntity entity)
     {
-        protected readonly AppDbContext Context;
-        protected readonly DbSet<EntityBase> DbSet;
+        await DbSet.AddAsync(entity);
+        return entity.Id;
+    }
 
-        public Repository(AppDbContext context)
-        {
-            Context = context;
-            DbSet = Context.Set<EntityBase>();
-        }
+    public void SoftDelete(TEntity entity)
+    {
+        if (entity.Id == Guid.Empty)
+            throw new ArgumentException("Soft deletion requires an assigned entity key.", nameof(entity));
 
-        public Task<EntityBase?> GetByIdAsync(Guid id)
-        {
-            return DbSet.Where(x => !x.IsDeleted).FirstOrDefaultAsync(x => x.Id == id);
-        }
+        var entry = Context.Entry(entity);
+        if (entry.State == EntityState.Detached)
+            DbSet.Attach(entity);
 
-        public Task<EntityBase> GetAsync(Expression<Func<EntityBase, bool>> predicate,
-            bool traking = false,
-            params Expression<Func<EntityBase, object>>[] includes)
-        {
-            var query = DbSet.Where(x => !x.IsDeleted).AsQueryable();
-
-            if (!traking)
-            {
-                query = query.AsNoTracking();
-            }
-
-            if (includes is not null && includes.Any())
-            {
-                query = includes.Aggregate(query,
-                          (current, include) => current.Include(include));
-            }
-
-            var result = query.FirstOrDefaultAsync(predicate);
-
-            return result;
-        }
-
-        public IQueryable<EntityBase> GetAllQueryableAsync(bool tracking = false)
-        {
-            var query = DbSet.Where(x => !x.IsDeleted).AsQueryable();
-
-            if (!tracking)
-            {
-                query = query.AsNoTracking();
-            }
-
-            query = query.OrderByDescending(x => x.CreatedAt);
-
-            return query;
-        }
-
-        public Task<bool> AnyAsync(Expression<Func<EntityBase, bool>> predicate = null)
-        {
-            var result = DbSet.Where(x => !x.IsDeleted).AnyAsync(predicate);
-            return result;
-        }
-
-        public Task<int> GetCountAsync(Expression<Func<EntityBase, bool>>? predicate = null)
-        {
-            var query = GetAllQueryableAsync();
-            query = query.Where(predicate);
-            return query.CountAsync();
-        }
-
-        public void Insert(EntityBase entity)
-        {
-            try
-            {
-                DbSet.AddAsync(entity);
-            }
-            catch (Exception e)
-            {
-                throw new Exception(typeof(EntityBase).Name, e);
-            }
-        }
-
-        public void Insert(List<EntityBase> entities)
-        {
-            try
-            {
-                DbSet.AddRange(entities);
-            }
-            catch (Exception e)
-            {
-                throw new Exception(typeof(EntityBase).Name, e);
-            }
-        }
-
-        public async Task<Guid> InsertAsync(EntityBase entity)
-        {
-            try
-            {
-                DbSet.AddAsync(entity);
-                await SaveChangesAsync();
-                return entity.Id;
-            }
-            catch (Exception e)
-            {
-                throw new Exception(typeof(EntityBase).Name, e);
-            }
-        }
-
-        public void Update(EntityBase entity)
-        {
-            try
-            {
-                DbSet.Update(entity);
-            }
-            catch (Exception e)
-            {
-                throw new Exception(typeof(EntityBase).Name, e);
-            }
-        }
-
-        public void SoftDelete(EntityBase entity)
-        {
+        if (entity is Product product)
+            product.Archive(DateTime.UtcNow);
+        else
             entity.IsDeleted = true;
-            DbSet.Remove(entity);
-        }
 
-        public void Delete(EntityBase entity)
+        if (entry.State == EntityState.Added)
+            return;
+
+        entry.Property(x => x.IsDeleted).IsModified = true;
+        if (entity is Product)
         {
-            DbSet.Remove(entity);
+            entry.Property(nameof(Product.DeletedAt)).IsModified = true;
+            entry.Property(nameof(Product.IsTracked)).IsModified = true;
+            entry.Property(nameof(Product.NextCheckAt)).IsModified = true;
+            entry.Property(nameof(Product.LeaseUntil)).IsModified = true;
         }
-
-        public Task SaveChangesAsync()
-        {
-            return Context.SaveChangesAsync();
-        }
-
-
     }
 }

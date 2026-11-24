@@ -1,16 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+namespace PriceTracker.Domain.IRepositories.Common;
 
-namespace PriceTracker.Domain.IRepositories.Common
+public interface IUnitOfWork
 {
-    public interface IUnitOfWork : IDisposable
-    {
-        IUserRepository UserRep { get; }
+    IBrandRepository BrandRep { get; }
+    IProductRepository ProductRep { get; }
+    ISellerRepository SellerRep { get; }
+    ILatestOfferRepository LatestOfferRep { get; }
+    IPriceObservationRepository PriceObservationRep { get; }
+    INotificationRepository NotificationRep { get; }
+    IAppSettingRepository AppSettingRep { get; }
+    IDiscoveryTaskRepository DiscoveryTaskRep { get; }
+    IUserRepository UserRep { get; }
+    IUserSessionRepository UserSessionRep { get; }
+    IUserRefreshTokenRepository UserRefreshTokenRep { get; }
 
-
-        Task<int> SaveAsync();
-    }
+    Task<int> SaveAsync(CancellationToken cancellationToken = default);
 }

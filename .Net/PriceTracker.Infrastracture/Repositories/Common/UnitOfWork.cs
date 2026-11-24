@@ -1,44 +1,34 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using PriceTracker.Domain.IRepositories;
 using PriceTracker.Domain.IRepositories.Common;
 
-namespace PriceTracker.Infrastracture.Repositories.Common
+namespace PriceTracker.Infrastracture.Repositories.Common;
+
+public sealed class UnitOfWork(
+    AppDbContext context,
+    IBrandRepository brandRep,
+    IProductRepository productRep,
+    ISellerRepository sellerRep,
+    ILatestOfferRepository latestOfferRep,
+    IPriceObservationRepository priceObservationRep,
+    INotificationRepository notificationRep,
+    IAppSettingRepository appSettingRep,
+    IDiscoveryTaskRepository discoveryTaskRep,
+    IUserRepository userRep,
+    IUserSessionRepository userSessionRep,
+    IUserRefreshTokenRepository userRefreshTokenRep) : IUnitOfWork
 {
-    public class UnitOfWork : IUnitOfWork
-    {
-        IUserRepository? _userRep { get; set; }
-        private readonly AppDbContext _dbContext;
+    public IBrandRepository BrandRep { get; } = brandRep;
+    public IProductRepository ProductRep { get; } = productRep;
+    public ISellerRepository SellerRep { get; } = sellerRep;
+    public ILatestOfferRepository LatestOfferRep { get; } = latestOfferRep;
+    public IPriceObservationRepository PriceObservationRep { get; } = priceObservationRep;
+    public INotificationRepository NotificationRep { get; } = notificationRep;
+    public IAppSettingRepository AppSettingRep { get; } = appSettingRep;
+    public IDiscoveryTaskRepository DiscoveryTaskRep { get; } = discoveryTaskRep;
+    public IUserRepository UserRep { get; } = userRep;
+    public IUserSessionRepository UserSessionRep { get; } = userSessionRep;
+    public IUserRefreshTokenRepository UserRefreshTokenRep { get; } = userRefreshTokenRep;
 
-        public UnitOfWork(
-            AppDbContext dbContext)
-        {
-            _dbContext = dbContext;
-        }
-
-        public IUserRepository UserRep => _userRep ??= new UserRepository(_dbContext);
-
-
-        public async Task<int> SaveAsync()
-        {
-            return await _dbContext.SaveChangesAsync();
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                _dbContext.Dispose();
-            }
-        }
-    }
+    public Task<int> SaveAsync(CancellationToken cancellationToken = default) =>
+        context.SaveChangesAsync(cancellationToken);
 }
