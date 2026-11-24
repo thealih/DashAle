@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using PriceTracker.Application.Behaviors;
+using PriceTracker.Application.Features.Panel;
 using PriceTracker.Application.Services;
 using PriceTracker.Application.Services.Shared;
 using MediatR;
@@ -18,6 +19,7 @@ namespace PriceTracker.Application
         public static void AddApplicationServices(this IServiceCollection services)
         {
             services.AddScoped<ICurrentUser, CurrentUser>();
+            services.AddScoped<PricePosition>();
 
             //mediatr
             services.AddMediatR(cfg =>

@@ -108,7 +108,7 @@ public sealed class CatalogQueries(AppDbContext db) : IRequestHandler<BrandList,
 
     public async Task<object> Handle(ProductList request, CancellationToken ct)
     {
-        var offset = Offset(request.Page, request.PageSize, 100);
+        var offset = PanelPagination.Offset(request.Page, request.PageSize, 100);
         IQueryable<Product> query = db.Products.AsNoTracking();
         if (request.Deleted)
             query = query.IgnoreQueryFilters().Where(x => x.IsDeleted && !x.Brand.IsDeleted);
@@ -153,7 +153,7 @@ public sealed class CatalogQueries(AppDbContext db) : IRequestHandler<BrandList,
 
     public async Task<object> Handle(ProductHistory request, CancellationToken ct)
     {
-        var offset = Offset(request.Page, request.PageSize, 500);
+        var offset = PanelPagination.Offset(request.Page, request.PageSize, 500);
         var query = await HistoryQuery(request.Id, request.SellerId, ct);
         if (request.Start is DateTime start)
             query = query.Where(x => x.ObservedAt >= start);
@@ -183,13 +183,6 @@ public sealed class CatalogQueries(AppDbContext db) : IRequestHandler<BrandList,
             .SingleOrDefaultAsync(ct) ?? throw MissingProduct();
         var query = db.PriceObservations.AsNoTracking().Where(x => x.ProductId == productId);
         return string.IsNullOrEmpty(sellerId) ? query : query.Where(x => x.Seller.SourceId == sellerId);
-    }
-
-    private static int Offset(int page, int size, int maxSize)
-    {
-        if (page < 1 || size < 1 || size > maxSize || (long)(page - 1) * size > int.MaxValue)
-            throw new PanelException(422, "شماره یا اندازهٔ صفحه معتبر نیست.");
-        return (page - 1) * size;
     }
 
     internal static PanelException MissingProduct() => new(404, "محصول پیدا نشد یا حذف شده است.");

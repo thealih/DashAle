@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Text.Json;
 using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -13,11 +11,6 @@ namespace PriceTracker.Api.Panel;
 [Route("api")]
 public sealed class CatalogController(ISender sender) : ControllerBase
 {
-    private static readonly JsonSerializerOptions PanelJson = new(JsonSerializerDefaults.Web)
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-    };
-
     public sealed record TrackingBody(long[]? Ids, bool? Tracked);
     public sealed record SelectionBody(long[]? Ids);
     public sealed record LinkBody([property: System.Text.Json.Serialization.JsonPropertyName("brand_id")] string? BrandId,
@@ -57,7 +50,7 @@ public sealed class CatalogController(ISender sender) : ControllerBase
         int page = 1, [FromQuery(Name = "page_size")] int pageSize = 100)
     {
         CheckInput();
-        return Reply(await sender.Send(new ProductHistory(id, sellerId, ParseDate(start), ParseDate(end), page, pageSize), ct));
+        return Reply(await sender.Send(new ProductHistory(id, sellerId, PanelRequest.ParseDate(start), PanelRequest.ParseDate(end), page, pageSize), ct));
     }
 
     [HttpGet("products/{id:long}/timeline")]
@@ -112,18 +105,6 @@ public sealed class CatalogController(ISender sender) : ControllerBase
             throw new PanelException(422, "داده‌های درخواست معتبر نیستند.");
     }
 
-    private static DateTime? ParseDate(string? value)
-    {
-        if (string.IsNullOrEmpty(value))
-            return null;
-        var hasZone = value.EndsWith('Z') || (value.Length >= 6
-            && value[^6] is '+' or '-' && value[^3] == ':');
-        if (hasZone && DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture,
-                DateTimeStyles.None, out var timestamp))
-            return timestamp.UtcDateTime;
-        throw new PanelException(422, "زمان باید ISO 8601 و دارای منطقهٔ زمانی باشد.");
-    }
-
     private static JsonResult Reply(object payload, int status = 200) =>
-        new(payload, PanelJson) { StatusCode = status };
+        new(payload, PanelRequest.Json) { StatusCode = status };
 }
