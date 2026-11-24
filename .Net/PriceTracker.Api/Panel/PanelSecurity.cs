@@ -1,6 +1,6 @@
+using PriceTracker.Application.Features.Commands.Users.Create;
 using System.Security.Claims;
 using MediatR;
-using PriceTracker.Application.Features.Commands.Users.Create;
 using PriceTracker.Application.Features.Panel;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -111,7 +111,7 @@ public static class PanelSecurity
         try
         {
             await scope.ServiceProvider.GetRequiredService<ISender>()
-                .Send(new CreateUserCommand(username, password, role));
+                .Send(new UserCreateCommand(username, password, role));
         }
         catch (PanelException ex)
         {

@@ -1,8 +1,11 @@
-using PriceTracker.Application.Features.Commands.Notifications;
-using PriceTracker.Application.Features.Commands.Stores;
-using PriceTracker.Application.Features.Queries.Notifications;
-using PriceTracker.Application.Features.Queries.Reports;
-using PriceTracker.Application.Features.Queries.Stores;
+using PriceTracker.Application.Features.Commands.Notifications.Read;
+using PriceTracker.Application.Features.Commands.Stores.Update;
+using PriceTracker.Application.Features.Queries.Notifications.List;
+using PriceTracker.Application.Features.Queries.Reports.HistoryExport;
+using PriceTracker.Application.Features.Queries.Reports.Position;
+using PriceTracker.Application.Features.Queries.Reports.PositionExport;
+using PriceTracker.Application.Features.Queries.Sellers.List;
+using PriceTracker.Application.Features.Queries.Stores.Get;
 using System.Text.Json.Serialization;
 using Asp.Versioning;
 using MediatR;
@@ -34,7 +37,7 @@ public sealed class InsightsController(ISender sender, IConfiguration configurat
         int page = 1, [FromQuery(Name = "page_size")] int pageSize = 20)
     {
         CheckInput();
-        return Reply(await sender.Send(new NoticeList(brandId, productId, sellerId, kind, unread, alertsOnly,
+        return Reply(await sender.Send(new NotificationListQuery(brandId, productId, sellerId, kind, unread, alertsOnly,
             PanelRequest.ParseDate(start), PanelRequest.ParseDate(end), page, pageSize), ct));
     }
 
@@ -44,15 +47,15 @@ public sealed class InsightsController(ISender sender, IConfiguration configurat
         CheckInput();
         if (input == null)
             throw new PanelException(422, "بدنهٔ درخواست معتبر نیست.");
-        await sender.Send(new ReadNotices(input.Ids, User.Identity?.Name), ct);
+        await sender.Send(new NotificationReadCommand(input.Ids, User.Identity?.Name), ct);
         return Reply(new { ok = true });
     }
 
     [HttpGet("sellers")]
-    public async Task<IActionResult> Sellers(CancellationToken ct) => Reply(await sender.Send(new SellerList(), ct));
+    public async Task<IActionResult> Sellers(CancellationToken ct) => Reply(await sender.Send(new SellerListQuery(), ct));
 
     [HttpGet("settings/own-store")]
-    public async Task<IActionResult> Store(CancellationToken ct) => Reply(await sender.Send(new GetOwnStore(), ct));
+    public async Task<IActionResult> Store(CancellationToken ct) => Reply(await sender.Send(new OwnStoreGetQuery(), ct));
 
     [HttpPut("settings/own-store"), Authorize(Policy = PanelSecurity.Admin)]
     public async Task<IActionResult> SaveStore(StoreBody? input, CancellationToken ct)
@@ -60,7 +63,7 @@ public sealed class InsightsController(ISender sender, IConfiguration configurat
         CheckInput();
         if (input == null)
             throw new PanelException(422, "بدنهٔ درخواست معتبر نیست.");
-        return Reply(await sender.Send(new SetOwnStore(input.SellerId ?? "", input.SellerName ?? "",
+        return Reply(await sender.Send(new OwnStoreUpdateCommand(input.SellerId ?? "", input.SellerName ?? "",
             input.UndercutToman ?? 1), ct));
     }
 
@@ -69,7 +72,7 @@ public sealed class InsightsController(ISender sender, IConfiguration configurat
         string? q = null, string status = "not_best", int page = 1, [FromQuery(Name = "page_size")] int pageSize = 20)
     {
         CheckInput();
-        return Reply(await sender.Send(new PositionQuery(brandId, q, status, page, pageSize), ct));
+        return Reply(await sender.Send(new PricePositionQuery(brandId, q, status, page, pageSize), ct));
     }
 
     [HttpGet("price-position/excel")]
@@ -78,7 +81,7 @@ public sealed class InsightsController(ISender sender, IConfiguration configurat
     {
         CheckInput();
         return Export("price-position-live.xlsx",
-            stream => new ExportPricePosition(stream, brandId, q, status, RowLimit()), ct);
+            stream => new PricePositionExportQuery(stream, brandId, q, status, RowLimit()), ct);
     }
 
     [HttpGet("reports/excel")]
@@ -92,7 +95,7 @@ public sealed class InsightsController(ISender sender, IConfiguration configurat
         var to = PanelRequest.ParseDate(end);
         var now = XlsxWorkbook.Local(DateTime.UtcNow);
         return Export($"didban-live-{now:yyyyMMdd-HHmm}.xlsx",
-            stream => new ExportHistory(stream, brandId, productId, sellerId, from, to, includeHistory, RowLimit()), ct);
+            stream => new HistoryExportQuery(stream, brandId, productId, sellerId, from, to, includeHistory, RowLimit()), ct);
     }
 
     private async Task<IActionResult> Export(string fileName, Func<Stream, IRequest> request, CancellationToken ct)

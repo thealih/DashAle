@@ -1,4 +1,4 @@
-using PriceTracker.Application.Features.Queries.Reports;
+using PriceTracker.Application.Features.Panel;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using System;

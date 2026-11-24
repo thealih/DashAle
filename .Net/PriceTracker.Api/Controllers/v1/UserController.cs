@@ -1,11 +1,11 @@
-using PriceTracker.Application.Features.Commands.Users.Roles;
-using PriceTracker.Application.Features.Queries.Users;
+using PriceTracker.Application.Features.Commands.Users.ChangeRole;
+using PriceTracker.Application.Features.Commands.Users.Create;
+using PriceTracker.Application.Features.Queries.Users.Search;
 using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PriceTracker.Api.Panel;
-using PriceTracker.Application.Features.Commands.Users.Create;
 
 namespace PriceTracker.Api.Controllers.v1;
 
@@ -24,7 +24,7 @@ public sealed class UserController(ISender sender) : ControllerBase
         if (!ModelState.IsValid)
             return UnprocessableEntity(new { detail = "پارامترهای جست‌وجو معتبر نیستند." });
 
-        return Ok(await sender.Send(new SearchUsers(q, role, active, page, pageSize), ct));
+        return Ok(await sender.Send(new UserSearchQuery(q, role, active, page, pageSize), ct));
     }
 
     [HttpPatch("{id:guid}/role")]
@@ -35,12 +35,12 @@ public sealed class UserController(ISender sender) : ControllerBase
         if (!PanelSecurity.TrySessionIds(User, out var actorId, out var sessionId))
             return Unauthorized(new { detail = "برای ادامه وارد حساب کاربری شوید." });
 
-        return Ok(await sender.Send(new ChangeUserRole(id, input.Role, actorId, sessionId), ct));
+        return Ok(await sender.Send(new UserChangeRoleCommand(id, input.Role, actorId, sessionId), ct));
     }
 
     /// <summary>ساخت حساب کاربری توسط مدیر</summary>
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateUserCommand? command, CancellationToken ct)
+    public async Task<IActionResult> Create([FromBody] UserCreateCommand? command, CancellationToken ct)
     {
         if (!ModelState.IsValid || command == null)
             return UnprocessableEntity(new { detail = "داده‌های درخواست معتبر نیستند." });
