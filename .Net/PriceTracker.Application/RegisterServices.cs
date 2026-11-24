@@ -31,8 +31,6 @@ namespace PriceTracker.Application
 
 
             
-            //mapper
-            services.AddAutoMapper(typeof(AppRegisterServices).Assembly);
         }
     }
 }

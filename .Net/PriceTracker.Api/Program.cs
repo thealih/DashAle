@@ -1,6 +1,7 @@
 using PriceTracker.Application;
 using PriceTracker.Infrastracture;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Serilog;
 using PriceTracker.Api.Extensions;
 using PriceTracker.Api;
@@ -12,13 +13,20 @@ using PriceTracker.Domain.IServices;
 using PriceTracker.Infrastracture.Services;
 
 var createUser = args.Length > 0 && args[0] == "--create-panel-user";
+var backup = args.Length > 0 && args[0] == "--backup-panel-db";
 if (createUser && args.Length != 3)
 {
     Console.Error.WriteLine("Usage: --create-panel-user <username> <admin|viewer>");
     Environment.ExitCode = 1;
     return;
 }
-var builder = WebApplication.CreateBuilder(createUser ? [] : args);
+if (backup && args.Length != 2)
+{
+    Console.Error.WriteLine("Usage: --backup-panel-db <destination.bak>");
+    Environment.ExitCode = 1;
+    return;
+}
+var builder = WebApplication.CreateBuilder(createUser || backup ? [] : args);
 var services = builder.Services;
 var configuration = builder.Configuration;
 
@@ -32,7 +40,7 @@ builder.Host.UseSerilog((context, configuration) =>
 services.AddInfrastructureServices (configuration);
 services.AddApplicationServices();
 services.AddApiServices();
-if (!createUser)
+if (!createUser && !backup)
     services.AddPanelSecurity(configuration, builder.Environment.IsDevelopment());
 services.AddHttpClient("SnappShop", client =>
 {
@@ -44,7 +52,7 @@ services.AddSingleton(provider => new SnappShopProductSource(
 services.AddSingleton<IProductSource>(provider => provider.GetRequiredService<SnappShopProductSource>());
 services.AddSingleton<IBrandProductSource>(provider => provider.GetRequiredService<SnappShopProductSource>());
 services.AddScoped<MonitoringWorker>();
-if (!createUser && configuration.GetValue<bool>("Monitoring:Enabled"))
+if (!createUser && !backup && configuration.GetValue<bool>("Monitoring:Enabled"))
     services.AddHostedService<MonitoringHostedService>();
 
 //cors
@@ -66,6 +74,13 @@ var app = builder.Build();
 if (createUser)
 {
     Environment.ExitCode = await PanelSecurity.CreateUserAsync(app.Services, args[1], args[2]);
+    return;
+}
+
+if (backup)
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    await LocalDatabaseBackup.WriteAsync(scope.ServiceProvider.GetRequiredService<AppDbContext>(), args[1]);
     return;
 }
 
@@ -122,6 +137,29 @@ options =>
 app.UseHttpsRedirection();
 
 app.UseSerilogRequestLogging();
+var panelPath = configuration["Panel:StaticPath"];
+if (!string.IsNullOrWhiteSpace(panelPath))
+{
+    var directory = Path.GetFullPath(panelPath, app.Environment.ContentRootPath);
+    if (!File.Exists(Path.Combine(directory, "index.html")))
+        throw new InvalidOperationException("Panel:StaticPath must point to a built frontend containing index.html.");
+    var files = new PhysicalFileProvider(directory);
+    app.Lifetime.ApplicationStopped.Register(files.Dispose);
+    app.UseWhen(context => !context.Request.Path.StartsWithSegments("/api"), branch =>
+    {
+        branch.UseDefaultFiles(new DefaultFilesOptions { FileProvider = files });
+        branch.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = files,
+            OnPrepareResponse = context =>
+            {
+                if (context.File.Name.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
+                    context.Context.Response.Headers.CacheControl = "no-cache";
+                context.Context.Response.Headers.XContentTypeOptions = "nosniff";
+            }
+        });
+    });
+}
 
 app.UseRouting();
 

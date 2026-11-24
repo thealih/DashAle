@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.background import BackgroundTask
 from pydantic import BaseModel, Field
 from sqlalchemy import select, func, distinct, or_, update
-from .config import settings, ROOT
+from .config import settings
 from .db import init_db, SessionLocal, Brand, Product, Seller, LatestOffer, Observation, Notification, AppSetting, Job, get_settings, now
 from .auth import current_user, admin, login, make_token
 from .monitor import embedded_loop, enqueue_discovery
@@ -428,6 +428,6 @@ def export(brand_id: str | None = None, product_id: int | None = None, seller_id
     return FileResponse(path, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', filename=f'didban-{settings.app_mode}-{datetime.now().strftime("%Y%m%d-%H%M")}.xlsx', background=BackgroundTask(os.unlink, path))
 
 
-out = ROOT / 'frontend' / 'out'
+out = settings.panel_static_path
 if out.exists():
     app.mount('/', StaticFiles(directory=out, html=True), name='panel')

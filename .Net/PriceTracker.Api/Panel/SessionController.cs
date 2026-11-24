@@ -184,6 +184,6 @@ public sealed class SessionController(AppDbContext db, IPasswordHasher<User> has
     [HttpGet("health")]
     public async Task<IActionResult> Health(CancellationToken ct) =>
         await db.Database.CanConnectAsync(ct)
-            ? Ok(new { status = "ok", mode = "live" })
+            ? Ok(new { status = "ok", mode = "live", backend = "dotnet" })
             : StatusCode(503, new { detail = "ارتباط با دیتابیس برقرار نیست." });
 }

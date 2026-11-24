@@ -1,6 +1,7 @@
 param([switch]$Demo, [int]$Port = 0, [switch]$Build)
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
+$frontend = Join-Path (Split-Path -Parent $PSScriptRoot) "frontend"
 $pythonPath = Join-Path $PSScriptRoot '.venv/Scripts/python.exe'
 if (-not (Test-Path -LiteralPath $pythonPath)) {
     $candidates = @((Join-Path $env:LOCALAPPDATA 'Programs/Python/Python311/python.exe'), 'python')
@@ -11,12 +12,12 @@ if (-not (Test-Path -LiteralPath $pythonPath)) {
     & $pythonPath -m pip install -r requirements.txt
     if ($LASTEXITCODE -ne 0) { throw 'Dependency installation failed.' }
 }
-if ($Build -or -not (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'frontend/out/index.html'))) {
-    Push-Location -LiteralPath (Join-Path $PSScriptRoot 'frontend')
+if ($Build -or -not (Test-Path -LiteralPath (Join-Path $frontend 'out/index.html'))) {
+    Push-Location -LiteralPath $frontend
     try {
-        npm ci --no-audit --no-fund
+        npm.cmd ci --no-audit --no-fund
         if ($LASTEXITCODE -ne 0) { throw 'Frontend installation failed.' }
-        npm run build
+        npm.cmd run build
         if ($LASTEXITCODE -ne 0) { throw 'Frontend build failed.' }
     } finally { Pop-Location }
 }

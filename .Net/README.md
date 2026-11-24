@@ -1,5 +1,9 @@
 # PriceTracker.Back
 
+اجرای اصلی ویندوز از دکمه‌های `Install.cmd`، `Run.cmd`، `Stop.cmd` و `Backup.cmd` در همین پوشه انجام می‌شود. این اجرا پنل و API را از یک مبدأ روی `http://127.0.0.1:8000/` ارائه می‌کند، به دیتابیس محلی `PriceTrackerDotNetLive` وصل می‌شود و موتور پایش را روشن می‌کند. حساب‌های اولیه در نخستین اجرا ساخته می‌شوند و اطلاعات ورود در `data/dotnet-access.txt` قرار می‌گیرند.
+
+برای اجرای مستقیم API با فرانت، `Panel__StaticPath` را روی مسیر خروجی ساخته‌شدهٔ `../frontend/out` تنظیم کنید. برای بازگشت موقت به نسخهٔ قدیمی روی پورت ۸۰۰۰، ابتدا `Stop.cmd` را اجرا کنید و سپس `python/launch.ps1` را اجرا کنید. نسخهٔ قبلی از SQLite خودش استفاده می‌کند.
+
 ## دیتابیس آزمایشی
 
 در ویندوز، SQL Server Express LocalDB و ابزار `dotnet-ef` را نصب کنید. از داخل پوشهٔ `.Net` دستور زیر را اجرا کنید:
@@ -66,12 +70,12 @@ dotnet run --project .\PriceTracker.Api --launch-profile http
 
 ### انتقال آزمایشی داده‌های پایتون
 
-از ریشهٔ مخزن با `.\.venv\Scripts\python.exe .\scripts\backup_sqlite.py` یک نسخهٔ پشتیبان سازگار از SQLite بگیرید و مسیر فایل چاپ‌شده را در دستورهای زیر جایگزین کنید. ابزار ورودی را فقط‌خواندنی باز می‌کند. برای انتقال آزمایشی، از یک SQL Server مستقل و نامی با پیشوند `PriceTrackerImport` استفاده کنید. موتور پایش .NET را برای این مقصد خاموش نگه دارید.
+از ریشهٔ مخزن با `.\python\.venv\Scripts\python.exe .\python\scripts\backup_sqlite.py` یک نسخهٔ پشتیبان سازگار از SQLite بگیرید و مسیر فایل چاپ‌شده را در دستورهای زیر جایگزین کنید. ابزار ورودی را فقط‌خواندنی باز می‌کند. برای انتقال آزمایشی، از یک SQL Server مستقل و نامی با پیشوند `PriceTrackerImport` استفاده کنید. موتور پایش .NET را برای این مقصد خاموش نگه دارید.
 
 از داخل پوشهٔ `.Net` در PowerShell اجرا کنید:
 
 ```powershell
-$snapshot = '..\data\backups\live-YYYYMMDD-HHMMSS.db'
+$snapshot = '..\python\data\backups\live-YYYYMMDD-HHMMSS.db'
 $target = 'PriceTrackerImportTrial'
 $env:PRICE_TRACKER_IMPORT_SQL = "Server=(localdb)\MSSQLLocalDB;Database=$target;Integrated Security=True;TrustServerCertificate=True"
 

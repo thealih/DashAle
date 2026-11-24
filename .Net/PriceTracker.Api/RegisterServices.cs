@@ -39,8 +39,6 @@ namespace PriceTracker.Api
             services.AddSwagger();
             services.AddHttpContextAccessor();
 
-            //mapper
-            services.AddAutoMapper(typeof(RegisterServices).Assembly);
 
 
             //exception handler

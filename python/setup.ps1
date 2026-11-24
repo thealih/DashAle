@@ -1,6 +1,7 @@
 param([switch]$SkipFrontend)
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
+$frontend = Join-Path (Split-Path -Parent $PSScriptRoot) "frontend"
 $pythonPath = Join-Path $PSScriptRoot '.venv/Scripts/python.exe'
 
 function Find-CompatiblePython {
@@ -23,7 +24,7 @@ function Find-CompatiblePython {
             if ($LASTEXITCODE -eq 0 -and $versionResult -eq 'compatible') { return $candidate }
         } catch { continue }
     }
-    throw 'Python 3.11 or 3.12 was not found. Install Python, enable Add python.exe to PATH, then run Install.cmd again. See README.md.'
+    throw 'Python 3.11 or 3.12 was not found. Install Python, enable Add python.exe to PATH, then run setup.ps1 again.'
 }
 
 if (-not (Test-Path -LiteralPath $pythonPath)) {
@@ -35,24 +36,24 @@ if (-not (Test-Path -LiteralPath $pythonPath)) {
 }
 Write-Host '[2/4] Installing backend dependencies...'
 & $pythonPath -m pip install -r requirements.txt
-if ($LASTEXITCODE -ne 0) { throw 'Dependency download failed. Check your connection and run Install.cmd again.' }
+if ($LASTEXITCODE -ne 0) { throw 'Dependency download failed. Check your connection and run setup.ps1 again.' }
 
 if (-not $SkipFrontend) {
-    if (-not (Get-Command npm.cmd -ErrorAction SilentlyContinue)) { throw 'Node.js with npm is required. Install Node.js 22 LTS, then run Install.cmd again. See README.md.' }
+    if (-not (Get-Command npm.cmd -ErrorAction SilentlyContinue)) { throw 'Node.js with npm is required. Install Node.js 22 LTS, then run setup.ps1 again.' }
     Write-Host '[3/4] Installing and building the panel. This can take several minutes...'
-    Push-Location -LiteralPath (Join-Path $PSScriptRoot 'frontend')
+    Push-Location -LiteralPath $frontend
     try {
         & npm.cmd ci --no-audit --no-fund --registry=https://registry.npmjs.org
         if ($LASTEXITCODE -ne 0) { throw 'Frontend dependency download failed.' }
         & npm.cmd run build
         if ($LASTEXITCODE -ne 0) { throw 'Frontend build failed.' }
     } finally { Pop-Location }
-} elseif (-not (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'frontend/out/index.html'))) {
-    throw 'Compiled frontend is missing. Run Install.cmd without SkipFrontend.'
+} elseif (-not (Test-Path -LiteralPath (Join-Path $frontend 'out/index.html'))) {
+    throw 'Compiled frontend is missing. Run setup.ps1 without SkipFrontend.'
 }
 Write-Host '[4/4] Preparing local settings and login information...'
 & $pythonPath -X utf8 scripts/bootstrap.py
 if ($LASTEXITCODE -ne 0) { throw 'Could not prepare local settings.' }
 Write-Host ''
-Write-Host 'Installation complete. Double-click Run.cmd to open the application.'
+Write-Host 'Installation complete. Double-click Demo.cmd or run launch.ps1.'
 Write-Host 'Login information: data/local-access.txt'

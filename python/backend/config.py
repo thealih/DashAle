@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     request_timeout_seconds: int = 25
     discovery_max_pages: int = 500
     max_report_rows: int = 200000
+    panel_static_path: Path = ROOT.parent / 'frontend' / 'out'
 
 
 settings = Settings()

@@ -2,7 +2,7 @@
 
 Snapp! Shop's read-only request protocol was researched using the public source at
 https://github.com/sepehr071/snappshop-mcp. The recorded test fixtures
-`tests/fixtures/product.json` and `tests/fixtures/search.json` originate from that
+`python/tests/fixtures/product.json` and `python/tests/fixtures/search.json` originate from that
 repository and are provided under its MIT license below. The upstream fixture
 contains an abbreviated vendor list; our tests explicitly verify rejection of
 that partial response. Our collector is independently implemented and does not

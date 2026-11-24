@@ -1,5 +1,7 @@
 x-app: &app
-  build: .
+  build:
+    context: ..
+    dockerfile: python/Dockerfile
   image: didban-prices:local
   env_file: .env
   environment: &environment

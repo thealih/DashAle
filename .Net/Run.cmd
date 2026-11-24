@@ -1,5 +1,5 @@
 @echo off
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0launch.ps1"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0dotnet-panel.ps1" -Action Start
 if errorlevel 1 (
   echo.
   echo Could not start. Run Install.cmd first or read README.md.

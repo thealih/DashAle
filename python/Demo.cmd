@@ -1,7 +1,7 @@
 @echo off
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0launch.ps1" -Demo
 if errorlevel 1 (
-  echo Could not start the demo. Run Install.cmd first.
+  echo Could not start the demo. Run setup.ps1 to install the legacy demo first.
   pause
   exit /b 1
 )

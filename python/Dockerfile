@@ -8,10 +8,10 @@ RUN npm run build
 
 FROM python:3.11-slim
 WORKDIR /app
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
-COPY requirements.txt ./
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PANEL_STATIC_PATH=/app/frontend/out
+COPY python/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
-COPY backend/ ./backend/
+COPY python/backend/ ./backend/
 COPY --from=frontend /ui/out ./frontend/out/
 RUN useradd --create-home --uid 10001 monitor && mkdir -p /app/data && chown -R monitor:monitor /app
 USER monitor

@@ -1,9 +1,10 @@
 param([switch]$Demo, [int]$Port = 0)
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
+$frontend = Join-Path (Split-Path -Parent $PSScriptRoot) "frontend"
 $pythonPath = Join-Path $PSScriptRoot '.venv/Scripts/python.exe'
 if (-not (Test-Path -LiteralPath $pythonPath)) { throw 'Run start.ps1 once to install the application.' }
-if (-not (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'frontend/out/index.html'))) { throw 'Build the frontend first: ./start.ps1 -Build' }
+if (-not (Test-Path -LiteralPath (Join-Path $frontend 'out/index.html'))) { throw 'Build the frontend first: ./start.ps1 -Build' }
 & $pythonPath scripts/bootstrap.py
 $mode = 'live'
 if ($Demo) { $mode = 'demo' }

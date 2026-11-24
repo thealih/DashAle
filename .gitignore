@@ -20,9 +20,10 @@ test-results/
 *.sqlite3
 *.pdf
 # Local delivery archives, exported data and diagnostics are not source code.
-deliverables/*
-!deliverables/price-position.png
-!deliverables/delete-products.png
-!deliverables/VALIDATION.md
+python/deliverables/*
+!python/deliverables/VALIDATION.md
+frontend/screenshots/*
+!frontend/screenshots/price-position.png
+!frontend/screenshots/delete-products.png
 /.Net/PriceTracker.Import/bin/Debug/net8.0
 /.Net/PriceTracker.Import/obj
