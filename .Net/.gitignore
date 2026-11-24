@@ -1,0 +1,23 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/PriceTracker.Api/obj
+/PriceTracker.Api/PriceTracker.Api.csproj.user
+/PriceTracker.Application/bin/Debug/net8.0
+/PriceTracker.Application/obj
+/PriceTracker.Api/bin/Debug/net8.0
+/PriceTracker.Domain/bin/Debug/net8.0
+/PriceTracker.Domain/obj
+/PriceTracker.Infrastracture/bin/Debug/net8.0
+/PriceTracker.Infrastracture/obj
+/PriceTracker.Application/bin/Release/net8.0
+/PriceTracker.Api/bin/Release/net8.0
+/PriceTracker.Api/Properties/PublishProfiles
+/PriceTracker.Domain/bin/Release/net8.0
+/PriceTracker.Infrastracture/bin/Release/net8.0
+/PriceTracker.Api/bin/Debug/net8.0
+/PriceTracker.Back/obj
+/PriceTracker.Back/PriceTracker.Back.csproj.user
+/PriceTracker.Domain/bin/Release/appdomain.1.0.0.nupkg

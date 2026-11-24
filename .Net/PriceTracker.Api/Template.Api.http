@@ -1,0 +1,6 @@
+@Notify.Back_HostAddress = http://localhost:5117
+
+GET {{Notify.Back_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
