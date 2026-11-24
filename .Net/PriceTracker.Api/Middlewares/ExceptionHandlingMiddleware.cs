@@ -1,10 +1,13 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using PriceTracker.Api.Models.DTOs;
 using PriceTracker.Application.Models.Shared;
 using PriceTracker.Application.Models.DTOs;
+
+using PriceTracker.Application.Features.Panel;
+using PriceTracker.Api.Panel;
 
 namespace PriceTracker.Application.Middlewares
 {
@@ -23,6 +26,12 @@ namespace PriceTracker.Application.Middlewares
             Exception exception,
             CancellationToken cancellationToken)
         {
+            if (exception is PanelException panelException)
+            {
+                await PanelSecurity.Error(httpContext, panelException.StatusCode, panelException.Message);
+                return true;
+            }
+
             var detail = GetExceptionDetail(exception);
 
             _logger.LogError($"{nameof(ExceptionHandlingMiddleware)}" +

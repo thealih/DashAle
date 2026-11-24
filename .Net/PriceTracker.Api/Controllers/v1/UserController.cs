@@ -1,44 +1,24 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PriceTracker.Api.Panel;
 using PriceTracker.Application.Features.Commands.Users.Create;
-using PriceTracker.Application.Features.Queries.ExternalSample;
-using PriceTracker.Application.Features.Queries.Users.GetAll;
-using PriceTracker.Back.Models.Statics;
 
-namespace PriceTracker.Api.Controllers.v1
+namespace PriceTracker.Api.Controllers.v1;
+
+[ApiController, ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/users")]
+[Authorize(Policy = PanelSecurity.Admin)]
+public sealed class UserController(ISender sender) : ControllerBase
 {
-    [Route("api/v{version:apiVersion}/users")]
-    [ApiVersion("1.0")]
-    [ApiController]
-    public class UserController : ControllerBase
+    /// <summary>ساخت حساب کاربری توسط مدیر</summary>
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] CreateUserCommand? command, CancellationToken ct)
     {
-        private readonly IMediator _mediator;
+        if (!ModelState.IsValid || command == null)
+            return UnprocessableEntity(new { detail = "داده‌های درخواست معتبر نیستند." });
 
-        public UserController(IMediator mediator)
-        {
-            _mediator = mediator;
-        }
-
-        /// <summary>
-        /// جستجو کاربران
-        /// </summary>
-        /// <returns></returns>
-        [Authorize(Policy = nameof(ClientScopes.CkL1))]
-        [HttpPost("search")]
-        public async Task<IActionResult> SearchAsync(UserSearchQuery query) =>
-            Ok(await _mediator.Send(query));
-
-        /// <summary>
-        /// افزودن کاربر جدید
-        /// </summary>
-        /// <param name="command"></param>
-        /// <returns></returns>
-        //[Authorize(Policy = nameof(ClientScopes.CkL1))]
-        [HttpPost]
-        public async Task<IActionResult> CreateAsync([FromBody] CreateUserCommand command)=>
-            Ok(await _mediator.Send(command));
-
+        return StatusCode(StatusCodes.Status201Created, await sender.Send(command, ct));
     }
 }

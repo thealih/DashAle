@@ -1,5 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using Microsoft.Extensions.Logging;
+using System.Text.Json;
 using FluentResults;
 using FluentValidation;
 using MediatR;
@@ -48,7 +48,7 @@ namespace PriceTracker.Application.Behaviors
                 return await next();
             }
 
-            var errorJson = JsonConvert.SerializeObject(failures);
+            var errorJson = JsonSerializer.Serialize(failures.Select(x => new { x.PropertyName, x.ErrorMessage }));
             _logger.LogWarning("Validation failed for {RequestType}: {Errors}", typeof(TRequest).Name, errorJson);
 
             var a = IsResultType(typeof(TResponse));

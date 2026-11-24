@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -10,14 +10,12 @@ using PriceTracker.Application.Services;
 using PriceTracker.Application.Services.Shared;
 using MediatR;
 using FluentValidation;
-using Microsoft.Extensions.Configuration;
-using PriceTracker.Application.Models.Options;
 
 namespace PriceTracker.Application
 {
     public static class AppRegisterServices
     {
-        public static void AddApplicationServices(this IServiceCollection services,IConfiguration configuration)
+        public static void AddApplicationServices(this IServiceCollection services)
         {
             services.AddScoped<ICurrentUser, CurrentUser>();
 
@@ -30,8 +28,6 @@ namespace PriceTracker.Application
             services.AddValidatorsFromAssembly(typeof(AppRegisterServices).Assembly);
 
 
-            //options
-            services.Configure<ExternalOption>(configuration.GetSection("External"));
             
             //mapper
             services.AddAutoMapper(typeof(AppRegisterServices).Assembly);

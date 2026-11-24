@@ -10,6 +10,19 @@ dotnet ef database update --project .\PriceTracker.Infrastracture --startup-proj
 
 مقصد پیش‌فرض `(localdb)\MSSQLLocalDB` و نام دیتابیس `PriceTrackerDev` است. برای مقصد دیگری مقدار `DB__SqlConnectionString` را در محیط تنظیم کنید. migration اولیه جدول‌ها، هفت برند و تنظیمات پیش‌فرض پایش را می‌سازد. حساب کاربری اولیه و داده‌های نسخهٔ پایتون در این migration وارد نمی‌شوند.
 
+## ساخت حساب و اجرای API
+
+بعد از اجرای migration، در PowerShell 7 از داخل `.Net` حساب مدیر را بسازید. رمز هنگام تایپ پنهان است و باید ۱۲ تا ۵۰۰ کاراکتر داشته باشد.
+
+```powershell
+Read-Host 'Password' -MaskInput | dotnet run --project .\PriceTracker.Api --launch-profile http -- --create-panel-user admin admin
+dotnet run --project .\PriceTracker.Api --launch-profile http
+```
+
+سرویس توسعه روی `http://localhost:5125` اجرا می‌شود. برای ساخت حساب مشاهده‌گر، پارامترهای انتهایی را با نام کاربری موردنظر و نقش `viewer` جایگزین کنید. مسیر ورود `POST /api/auth/login` با بدنهٔ JSON شامل `username` و `password` است. مسیرهای داشبورد و کاتالوگ از کوکی ورود استفاده می‌کنند. کارهای کشف و بررسی در صف ثبت می‌شوند و مصرف‌کنندهٔ صف در مرحلهٔ پایش اضافه می‌شود.
+
+مدیر واردشده می‌تواند از `POST /api/v1/users` حساب بسازد. بدنهٔ JSON شامل `username`، `password` و `role` است. اگر نقش را نفرستید، حساب با نقش `viewer` ساخته می‌شود. برای استقرار در محیط Production، اتصال SQL Server را با متغیر محیطی `DB__SqlConnectionString` تنظیم کنید.
+
 
 
 ## Getting started

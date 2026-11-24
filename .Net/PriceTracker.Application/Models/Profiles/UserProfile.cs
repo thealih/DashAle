@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,7 +22,6 @@ namespace PriceTracker.Application.Models.Profiles
             CreateMap<SearchModel, SearchDTO>().ReverseMap();
 
             CreateMap<User, UserDTO>().ReverseMap();
-            CreateMap<UserSearchModel, UserSearchDTO>().ReverseMap();
             CreateMap<PagedResult<User>, PagedResult<UserDTO>>().ReverseMap();
 
         }

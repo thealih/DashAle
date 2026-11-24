@@ -1,4 +1,3 @@
-﻿using FormBuilder.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -11,7 +10,7 @@ namespace PriceTracker.Api
 {
     public static class RegisterServices
     {
-        public static void AddApiServices(this IServiceCollection services, IConfiguration configuration)
+        public static void AddApiServices(this IServiceCollection services)
         {
             //versioning
             services.AddApiVersioning(
@@ -19,6 +18,7 @@ namespace PriceTracker.Api
                 {
                     options.ReportApiVersions = true;
                 })
+            .AddMvc()
             .AddApiExplorer(
                 options =>
                 {
@@ -28,14 +28,8 @@ namespace PriceTracker.Api
             services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
 
             //authentication
-            services.AddAuthenticate(configuration);
             services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
-
-            //authorization
-            services.AddAuthPolicy();
-
-            services.AddEndpointsApiExplorer();
 
             // Add services to the container.
             services.AddControllers();

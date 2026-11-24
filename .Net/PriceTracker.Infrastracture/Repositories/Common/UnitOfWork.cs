@@ -1,5 +1,3 @@
-﻿using Bill.Infrastracture.Models.Options;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,11 +11,9 @@ namespace PriceTracker.Infrastracture.Repositories.Common
     public class UnitOfWork : IUnitOfWork
     {
         IUserRepository? _userRep { get; set; }
-        private readonly IOptions<MongoDbOptions> _options;
         private readonly AppDbContext _dbContext;
 
         public UnitOfWork(
-            IOptions<MongoDbOptions> options,
             AppDbContext dbContext)
         {
             _dbContext = dbContext;
