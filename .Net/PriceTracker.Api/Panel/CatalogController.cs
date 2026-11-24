@@ -1,3 +1,5 @@
+using PriceTracker.Application.Features.Commands.Catalog;
+using PriceTracker.Application.Features.Queries.Catalog;
 using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;

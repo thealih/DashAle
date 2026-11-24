@@ -3,8 +3,9 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using PriceTracker.Application.Features.Monitoring;
 using PriceTracker.Infrastracture;
+using PriceTracker.Application.Features.Panel;
 
-namespace PriceTracker.Application.Features.Panel;
+namespace PriceTracker.Application.Features.Queries.Reports;
 
 public sealed record PositionQuery(string? BrandId, string? Search, string Status, int Page, int PageSize)
     : IRequest<PositionResult>;

@@ -13,8 +13,6 @@ namespace PriceTracker.Application.Features.Commands.Users.Create;
 public sealed record CreateUserCommand(string? Username, string? Password, string? Role)
     : IRequest<CreatedUser>;
 
-public sealed record CreatedUser(Guid Id, string Username, string Role, bool IsActive);
-
 public sealed class CreateUserCommandHandler(AppDbContext db, IPasswordHasher<User> hasher)
     : IRequestHandler<CreateUserCommand, CreatedUser>
 {

@@ -1,10 +1,11 @@
+using PriceTracker.Application.Features.Commands.Users.Roles;
+using PriceTracker.Application.Features.Queries.Users;
 using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PriceTracker.Api.Panel;
 using PriceTracker.Application.Features.Commands.Users.Create;
-using PriceTracker.Application.Features.Panel;
 
 namespace PriceTracker.Api.Controllers.v1;
 

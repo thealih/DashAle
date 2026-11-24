@@ -1,10 +1,11 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using PriceTracker.Application.Features.Panel;
 using PriceTracker.Domain.Models.Entities;
 using PriceTracker.Domain.Models.Enums;
 using PriceTracker.Infrastracture;
 
-namespace PriceTracker.Application.Features.Panel;
+namespace PriceTracker.Application.Features.Queries.Catalog;
 
 public sealed record BrandList : IRequest<object>;
 public sealed record DashboardSummary : IRequest<object>;
@@ -14,29 +15,6 @@ public sealed record ProductDetail(long Id) : IRequest<ProductView>;
 public sealed record ProductHistory(long Id, string? SellerId, DateTime? Start, DateTime? End,
     int Page, int PageSize) : IRequest<object>;
 public sealed record ProductTimeline(long Id, string? SellerId) : IRequest<object>;
-
-public sealed record OfferView(Guid Id, string SellerId, string SellerName, string OfferKey,
-    string Variant, long? Price, long? ListPrice, bool? Available, DateTime ObservedAt,
-    bool Missing = false, string? ComparisonKey = null);
-
-public sealed record ProductView(long Id, string BrandId, string SourceId, string Title, string Url,
-    string? Image, bool Tracked, DateTime? DeletedAt, DateTime CreatedAt, DateTime? LastAttempt,
-    DateTime? LastSuccess, DateTime? NextCheck, DateTime? LeaseUntil, string? Error, int FailureCount)
-{
-    public long? MinPrice { get; init; }
-    public int? SellerCount { get; init; }
-    public IReadOnlyList<OfferView>? Offers { get; init; }
-    public bool? AlreadyExists { get; init; }
-    public bool? BrandChanged { get; init; }
-    public bool? Restored { get; init; }
-    public string? BrandWarning { get; init; }
-    public string? Message { get; init; }
-
-    public static ProductView From(Product product, string brandSlug) => new(product.PublicId,
-        brandSlug, product.SourceId, product.Title, ProductLinks.Canonical(product.SourceId, product.Url),
-        product.ImageUrl, product.IsTracked, product.DeletedAt, product.CreatedAt, product.LastAttemptAt,
-        product.LastSuccessAt, product.NextCheckAt, product.LeaseUntil, product.Error, product.FailureCount);
-}
 
 public sealed class CatalogQueries(AppDbContext db) : IRequestHandler<BrandList, object>,
     IRequestHandler<DashboardSummary, object>, IRequestHandler<ProductList, object>,
@@ -142,7 +120,7 @@ public sealed class CatalogQueries(AppDbContext db) : IRequestHandler<BrandList,
     public async Task<ProductView> Handle(ProductDetail request, CancellationToken ct)
     {
         var product = await db.Products.AsNoTracking().Include(x => x.Brand)
-            .SingleOrDefaultAsync(x => x.PublicId == request.Id, ct) ?? throw MissingProduct();
+            .SingleOrDefaultAsync(x => x.PublicId == request.Id, ct) ?? throw PanelException.MissingProduct();
         var offers = await db.LatestOffers.Where(x => x.ProductId == product.Id)
             .OrderBy(x => x.IsMissing).ThenBy(x => x.Price).ThenBy(x => x.Id)
             .Select(x => new OfferView(x.Id, x.Seller.SourceId, x.Seller.Name, x.OfferKey, x.Variant,
@@ -180,10 +158,9 @@ public sealed class CatalogQueries(AppDbContext db) : IRequestHandler<BrandList,
     private async Task<IQueryable<PriceObservation>> HistoryQuery(long publicId, string? sellerId, CancellationToken ct)
     {
         var productId = await db.Products.Where(x => x.PublicId == publicId).Select(x => (Guid?)x.Id)
-            .SingleOrDefaultAsync(ct) ?? throw MissingProduct();
+            .SingleOrDefaultAsync(ct) ?? throw PanelException.MissingProduct();
         var query = db.PriceObservations.AsNoTracking().Where(x => x.ProductId == productId);
         return string.IsNullOrEmpty(sellerId) ? query : query.Where(x => x.Seller.SourceId == sellerId);
     }
 
-    internal static PanelException MissingProduct() => new(404, "محصول پیدا نشد یا حذف شده است.");
 }

@@ -1,16 +1,15 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using PriceTracker.Application.Features.Panel;
 using PriceTracker.Domain.Models.Enums;
 using PriceTracker.Infrastracture;
 
-namespace PriceTracker.Application.Features.Panel;
+namespace PriceTracker.Application.Features.Queries.Notifications;
 
 public sealed record NoticeList(string? BrandId, long? ProductId, string? SellerId, string? Kind,
     bool Unread, bool AlertsOnly, DateTime? Start, DateTime? End, int Page, int PageSize) : IRequest<object>;
 
-public sealed record ReadNotices(long[]? Ids, string? Actor) : IRequest;
-
-public sealed class NoticeQueries(AppDbContext db) : IRequestHandler<NoticeList, object>, IRequestHandler<ReadNotices>
+public sealed class NoticeQueries(AppDbContext db) : IRequestHandler<NoticeList, object>
 {
     private static readonly Dictionary<string, NotificationKind> Kinds = new(StringComparer.Ordinal)
     {
@@ -71,22 +70,5 @@ public sealed class NoticeQueries(AppDbContext db) : IRequestHandler<NoticeList,
             }),
             total
         };
-    }
-
-    public async Task Handle(ReadNotices request, CancellationToken ct)
-    {
-        if (request.Ids is { Length: > 1000 })
-            throw new PanelException(422, "حداکثر ۱۰۰۰ اعلان را هم‌زمان انتخاب کنید.");
-
-        var query = db.Notifications.Where(x => !x.IsRead);
-        if (request.Ids is { } ids)
-        {
-            if (ids.Length == 0)
-                return;
-            query = query.Where(x => ids.Contains(x.PublicId));
-        }
-        var now = DateTime.UtcNow;
-        await query.ExecuteUpdateAsync(set => set.SetProperty(x => x.IsRead, true)
-            .SetProperty(x => x.ModifiedAt, now).SetProperty(x => x.ModifiedBy, request.Actor), ct);
     }
 }

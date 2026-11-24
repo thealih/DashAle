@@ -1,16 +1,17 @@
 using System.ComponentModel.DataAnnotations;
 using System.Data;
-using PriceTracker.Application.Features.Monitoring;
 using System.Text.RegularExpressions;
 using MediatR;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using PriceTracker.Application.Features.Monitoring;
+using PriceTracker.Application.Features.Panel;
 using PriceTracker.Domain.IServices;
 using PriceTracker.Domain.Models.Entities;
 using PriceTracker.Domain.Models.Enums;
 using PriceTracker.Infrastracture;
 
-namespace PriceTracker.Application.Features.Panel;
+namespace PriceTracker.Application.Features.Commands.Catalog;
 
 public enum ProductAction
 {
@@ -30,12 +31,10 @@ public sealed record UpdateProducts(long[] Ids, ProductAction Action, string? Ac
 public sealed record QueueProductCheck(long Id, string? Actor) : IRequest;
 public sealed record QueueDiscovery(string BrandId) : IRequest<Guid>;
 public sealed record AddProductLink(string? BrandId, string? Url) : IRequest<ProductView>;
-public sealed record PreviewProduct(long Id) : IRequest<object>;
 
 public sealed partial class CatalogCommands(AppDbContext db, IProductSource source) :
     IRequestHandler<UpdateProducts, int>, IRequestHandler<QueueProductCheck>,
-    IRequestHandler<QueueDiscovery, Guid>, IRequestHandler<AddProductLink, ProductView>,
-    IRequestHandler<PreviewProduct, object>
+    IRequestHandler<QueueDiscovery, Guid>, IRequestHandler<AddProductLink, ProductView>
 {
     public async Task<int> Handle(UpdateProducts request, CancellationToken ct)
     {
@@ -74,7 +73,7 @@ public sealed partial class CatalogCommands(AppDbContext db, IProductSource sour
             .SetProperty(x => x.ModifiedAt, now).SetProperty(x => x.ModifiedBy, request.Actor), ct) != 0)
             return;
         if (!await query.AnyAsync(ct))
-            throw CatalogQueries.MissingProduct();
+            throw PanelException.MissingProduct();
         throw new PanelException(422, "ابتدا پایش این محصول را فعال کنید.");
     }
 
@@ -99,7 +98,7 @@ public sealed partial class CatalogCommands(AppDbContext db, IProductSource sour
         var brand = await db.Brands.AsNoTracking().SingleOrDefaultAsync(x => x.Slug == request.BrandId, ct)
             ?? throw MissingBrand();
         var exists = await db.Products.IgnoreQueryFilters().AnyAsync(x => x.SourceId == sourceId, ct);
-        var snapshot = exists ? null : await ReadSource(sourceId, ct);
+        var snapshot = exists ? null : await ProductSourceReader.ReadAsync(source, sourceId, ct);
         return await InTransaction(async () =>
         {
             if (!await db.Brands.AnyAsync(x => x.Id == brand.Id, ct))
@@ -152,30 +151,6 @@ public sealed partial class CatalogCommands(AppDbContext db, IProductSource sour
                 Message = "محصول جدید به برند انتخاب‌شده اضافه شد و پایش آن فعال است."
             };
         }, ct);
-    }
-
-    public async Task<object> Handle(PreviewProduct request, CancellationToken ct)
-    {
-        var sourceId = await db.Products.Where(x => x.PublicId == request.Id).Select(x => x.SourceId)
-            .SingleOrDefaultAsync(ct) ?? throw CatalogQueries.MissingProduct();
-        var snapshot = await ReadSource(sourceId, ct);
-        var now = DateTime.UtcNow;
-        return new
-        {
-            product_id = request.Id, observed_at = now, mode = "live", availability = snapshot.Availability,
-            seller_count = snapshot.Offers.Select(x => x.SellerId).Distinct().Count(),
-            offers = snapshot.Offers.OrderBy(x => x.Price == null).ThenBy(x => x.Price).Select((x, i) => new
-            {
-                id = -(i + 1), x.SellerId, x.SellerName, x.OfferKey, x.Variant, x.Price, x.ListPrice,
-                x.Available, observed_at = now, missing = false
-            })
-        };
-    }
-
-    private async Task<SourceProduct> ReadSource(string id, CancellationToken ct)
-    {
-        try { return await source.GetProductAsync(id, ct); }
-        catch (ProductSourceException ex) { throw new PanelException(502, ex.Message); }
     }
 
     private async Task<T> InTransaction<T>(Func<Task<T>> operation, CancellationToken ct)

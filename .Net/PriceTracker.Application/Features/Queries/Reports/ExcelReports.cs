@@ -3,8 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using PriceTracker.Domain.Models.Enums;
 using PriceTracker.Infrastracture;
 using PriceTracker.Infrastracture.Reports;
+using PriceTracker.Application.Features.Panel;
 
-namespace PriceTracker.Application.Features.Panel;
+namespace PriceTracker.Application.Features.Queries.Reports;
 
 public sealed record ExportHistory(Stream Output, string? BrandId, long? ProductId, string? SellerId,
     DateTime? Start, DateTime? End, bool IncludeHistory, int Limit) : IRequest;

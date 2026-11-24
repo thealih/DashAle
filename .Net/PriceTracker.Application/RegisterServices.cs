@@ -1,3 +1,4 @@
+using PriceTracker.Application.Features.Queries.Reports;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -6,7 +7,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using PriceTracker.Application.Behaviors;
-using PriceTracker.Application.Features.Panel;
 using PriceTracker.Application.Services;
 using PriceTracker.Application.Services.Shared;
 using MediatR;
