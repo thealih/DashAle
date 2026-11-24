@@ -1,4 +1,5 @@
 using System.Data;
+using PriceTracker.Application.Features.Monitoring;
 using System.Text.RegularExpressions;
 using MediatR;
 using Microsoft.Data.SqlClient;
@@ -45,7 +46,8 @@ public sealed partial class CatalogCommands(AppDbContext db, IProductSource sour
             default:
                 var track = request.Action == ProductAction.Track;
                 return await query.ExecuteUpdateAsync(set => set.SetProperty(x => x.IsTracked, track)
-                    .SetProperty(x => x.NextCheckAt, x => track ? timestamp : x.NextCheckAt)
+                    .SetProperty(x => x.NextCheckAt, track ? timestamp : (DateTime?)null)
+                    .SetProperty(x => x.LeaseUntil, x => track ? x.LeaseUntil : null)
                     .SetProperty(x => x.ModifiedAt, timestamp).SetProperty(x => x.ModifiedBy, request.Actor), ct);
         }
     }
@@ -111,38 +113,15 @@ public sealed partial class CatalogCommands(AppDbContext db, IProductSource sour
             if (snapshot == null)
                 throw new PanelException(409, "وضعیت محصول تغییر کرد؛ دوباره تلاش کنید.");
 
-            var intervalText = await db.AppSettings.Where(x => x.Key == "interval_minutes").Select(x => x.Value)
-                .SingleOrDefaultAsync(ct);
-            var interval = int.TryParse(intervalText, out var minutes) && minutes is >= 1 and <= 10080 ? minutes : 60;
+            var settings = await MonitoringSettings.LoadAsync(db, ct);
             product = new Product
             {
                 BrandId = brand.Id, SourceId = sourceId, Title = snapshot.Title, Url = ProductLinks.Canonical(sourceId),
-                ImageUrl = snapshot.ImageUrl, IsTracked = true, LastSuccessAt = now, NextCheckAt = now.AddMinutes(interval)
+                ImageUrl = snapshot.ImageUrl, IsTracked = true, NextCheckAt = now.AddMinutes(settings.IntervalMinutes)
             };
             db.Products.Add(product);
-            var sellerIds = snapshot.Offers.Select(x => x.SellerId).Distinct().ToArray();
-            var sellers = await db.Sellers.Where(x => sellerIds.Contains(x.SourceId)).ToDictionaryAsync(x => x.SourceId, ct);
-            foreach (var offer in snapshot.Offers)
-            {
-                if (!sellers.TryGetValue(offer.SellerId, out var seller))
-                {
-                    seller = new Seller { SourceId = offer.SellerId, Name = offer.SellerName };
-                    db.Sellers.Add(seller);
-                    sellers.Add(offer.SellerId, seller);
-                }
-                seller.Name = offer.SellerName;
-                db.LatestOffers.Add(new LatestOffer
-                {
-                    Product = product, Seller = seller, OfferKey = offer.OfferKey, ComparisonKey = offer.ComparisonKey,
-                    Variant = offer.Variant, Price = offer.Price, ListPrice = offer.ListPrice,
-                    Available = offer.Available, ObservedAt = now
-                });
-                db.PriceObservations.Add(new PriceObservation
-                {
-                    Product = product, Seller = seller, OfferKey = offer.OfferKey, Variant = offer.Variant,
-                    Price = offer.Price, ListPrice = offer.ListPrice, Available = offer.Available, ObservedAt = now
-                });
-            }
+            await PriceSnapshot.ApplyAsync(db, product, snapshot.Offers, now, settings.ThresholdPercent, ct);
+            product.LastSuccessAt = now;
             db.Notifications.Add(new Notification
             {
                 Product = product, BrandId = brand.Id, Kind = NotificationKind.ProductFound,

@@ -6,6 +6,10 @@ using PriceTracker.Api.Extensions;
 using PriceTracker.Api;
 
 using PriceTracker.Api.Panel;
+using PriceTracker.Api.BackgroundServices;
+using PriceTracker.Application.Features.Monitoring;
+using PriceTracker.Domain.IServices;
+using PriceTracker.Infrastracture.Services;
 
 var createUser = args.Length > 0 && args[0] == "--create-panel-user";
 if (createUser && args.Length != 3)
@@ -30,11 +34,18 @@ services.AddApplicationServices();
 services.AddApiServices();
 if (!createUser)
     services.AddPanelSecurity(configuration, builder.Environment.IsDevelopment());
-services.AddHttpClient<PriceTracker.Domain.IServices.IProductSource, PriceTracker.Infrastracture.Services.SnappShopProductSource>(client =>
+services.AddHttpClient("SnappShop", client =>
 {
     client.BaseAddress = new Uri("https://apix.snappshop.ir/");
     client.MaxResponseContentBufferSize = 12_000_000;
 }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+services.AddSingleton(provider => new SnappShopProductSource(
+    provider.GetRequiredService<IHttpClientFactory>().CreateClient("SnappShop")));
+services.AddSingleton<IProductSource>(provider => provider.GetRequiredService<SnappShopProductSource>());
+services.AddSingleton<IBrandProductSource>(provider => provider.GetRequiredService<SnappShopProductSource>());
+services.AddScoped<MonitoringWorker>();
+if (!createUser && configuration.GetValue<bool>("Monitoring:Enabled"))
+    services.AddHostedService<MonitoringHostedService>();
 
 //cors
 const string spaCorsPolicyName = "reactApp";
