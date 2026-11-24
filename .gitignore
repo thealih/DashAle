@@ -24,3 +24,5 @@ deliverables/*
 !deliverables/price-position.png
 !deliverables/delete-products.png
 !deliverables/VALIDATION.md
+/.Net/PriceTracker.Import/bin/Debug/net8.0
+/.Net/PriceTracker.Import/obj
