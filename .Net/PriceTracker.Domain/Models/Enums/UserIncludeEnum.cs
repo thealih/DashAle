@@ -1,4 +1,5 @@
-﻿using System;
+using System.ComponentModel.DataAnnotations;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +9,7 @@ namespace PriceTracker.Domain.Models.Enums
 {
     public enum UserIncludeEnum
     {
-        None,
+        [Display(Name = "بدون اطلاعات تکمیلی")]
+        None
     }
 }

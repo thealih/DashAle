@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Data;
 using PriceTracker.Application.Features.Monitoring;
 using System.Text.RegularExpressions;
@@ -11,7 +12,20 @@ using PriceTracker.Infrastracture;
 
 namespace PriceTracker.Application.Features.Panel;
 
-public enum ProductAction { Track, Untrack, Delete, Restore }
+public enum ProductAction
+{
+    [Display(Name = "فعال‌سازی پایش")]
+    Track,
+
+    [Display(Name = "توقف پایش")]
+    Untrack,
+
+    [Display(Name = "حذف")]
+    Delete,
+
+    [Display(Name = "بازیابی")]
+    Restore
+}
 public sealed record UpdateProducts(long[] Ids, ProductAction Action, string? Actor) : IRequest<int>;
 public sealed record QueueProductCheck(long Id, string? Actor) : IRequest;
 public sealed record QueueDiscovery(string BrandId) : IRequest<Guid>;
