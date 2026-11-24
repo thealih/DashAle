@@ -21,7 +21,27 @@ dotnet run --project .\PriceTracker.Api --launch-profile http
 
 سرویس توسعه روی `http://localhost:5125` اجرا می‌شود. برای ساخت حساب مشاهده‌گر، پارامترهای انتهایی را با نام کاربری موردنظر و نقش `viewer` جایگزین کنید. مسیر ورود `POST /api/auth/login` با بدنهٔ JSON شامل `username` و `password` است. مسیرهای داشبورد و کاتالوگ از کوکی ورود استفاده می‌کنند. کارهای کشف و بررسی در صف ثبت می‌شوند و مصرف‌کنندهٔ صف در مرحلهٔ پایش اضافه می‌شود.
 
-مدیر واردشده می‌تواند از `POST /api/v1/users` حساب بسازد. بدنهٔ JSON شامل `username`، `password` و `role` است. اگر نقش را نفرستید، حساب با نقش `viewer` ساخته می‌شود. برای استقرار در محیط Production، اتصال SQL Server را با متغیر محیطی `DB__SqlConnectionString` تنظیم کنید.
+### JWT و دسترسی کاربران
+
+ورود از `POST /api/auth/login` دو توکن صادر می‌کند. `access_token` به‌صورت پیش‌فرض ۱۵ دقیقه معتبر است و برای APIهای محافظت‌شده در هدر `Authorization: Bearer <token>` ارسال می‌شود. `refresh_token` تا پایان نشست، به‌صورت پیش‌فرض حداکثر ۷ روز از ورود، برای تمدید اعتبار دارد.
+
+برای تمدید از `POST /api/auth/refresh` با بدنهٔ `{"refresh_token":"..."}` استفاده کنید. پاسخ شامل یک Access Token و یک Refresh Token جدید است. هر بار هر دو مقدار را جایگزین کنید. استفادهٔ دوباره از Refresh Token مصرف‌شده تمام نشست را باطل می‌کند. در مرورگر هر دو توکن در کوکی `HttpOnly` قرار می‌گیرند و پنل درخواست تمدید را خودکار می‌فرستد. خروج همان نشست را لغو می‌کند و تغییر نقش همهٔ نشست‌های حساب هدف را می‌بندد. در صورت انقضای Access Token، امکان خروج با Refresh Token نیز وجود دارد.
+
+| مسیر | دسترسی |
+| --- | --- |
+| `GET /api/me`، داشبورد و مشاهدهٔ محصولات | مدیر و مشاهده‌گر |
+| `POST /api/v1/users` | مدیر. بدنه شامل `username`، `password` و `role` است. نقش پیش‌فرض `viewer` است. |
+| `GET /api/v1/users?q=ali&role=viewer&page=1&page_size=20` | مدیر. فیلترهای نام کاربری، نقش و وضعیت `active` اختیاری‌اند. |
+| `PATCH /api/v1/users/{id}/role` | مدیر. بدنهٔ نمونه `{"role":"admin"}` است. سامانه حداقل یک مدیر فعال را حفظ می‌کند. |
+| تغییر محصولات، پایش و کشف برند | مدیر |
+
+در توسعه، اگر کلید تعیین نشود، سرویس برای هر بار اجرا کلید تصادفی می‌سازد. برای معتبر ماندن Access Tokenهای صادرشده بعد از راه‌اندازی دوباره، کلید را ثابت نگه دارید. نمونهٔ تولید کلید توسعه در PowerShell 7:
+
+```powershell
+$env:Jwt__SigningKey = [Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
+```
+
+برای Production، `DB__SqlConnectionString` و یک کلید ثابت و محرمانهٔ `Jwt__SigningKey` را با تنظیمات محیط استقرار وارد کنید. هر نصب مستقل باید کلید خودش را داشته باشد. `Jwt__Issuer`، `Jwt__Audience`، `Jwt__LifetimeMinutes` و `Jwt__RefreshLifetimeDays` هم از محیط قابل تنظیم‌اند.
 
 
 

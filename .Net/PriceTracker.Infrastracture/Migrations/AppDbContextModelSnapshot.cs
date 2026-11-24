@@ -671,6 +671,45 @@ namespace PriceTracker.Infrastracture.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
+            modelBuilder.Entity("PriceTracker.Domain.Models.Entities.UserRefreshToken", b =>
+                {
+                    b.Property<string>("Hash")
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("char(64)")
+                        .IsFixedLength();
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Hash");
+
+                    b.HasIndex("SessionId");
+
+                    b.ToTable("UserRefreshTokens", (string)null);
+                });
+
+            modelBuilder.Entity("PriceTracker.Domain.Models.Entities.UserSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "ExpiresAt");
+
+                    b.ToTable("UserSessions", (string)null);
+                });
+
             modelBuilder.Entity("PriceTracker.Domain.Models.Entities.DiscoveryTask", b =>
                 {
                     b.HasOne("PriceTracker.Domain.Models.Entities.Brand", "Brand")
@@ -752,6 +791,28 @@ namespace PriceTracker.Infrastracture.Migrations
                         .IsRequired();
 
                     b.Navigation("Brand");
+                });
+
+            modelBuilder.Entity("PriceTracker.Domain.Models.Entities.UserRefreshToken", b =>
+                {
+                    b.HasOne("PriceTracker.Domain.Models.Entities.UserSession", "Session")
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Session");
+                });
+
+            modelBuilder.Entity("PriceTracker.Domain.Models.Entities.UserSession", b =>
+                {
+                    b.HasOne("PriceTracker.Domain.Models.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

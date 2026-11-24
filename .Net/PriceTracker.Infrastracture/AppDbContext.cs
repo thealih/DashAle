@@ -20,6 +20,8 @@ namespace PriceTracker.Infrastracture
         public DbSet<AppSetting> AppSettings => Set<AppSetting>();
         public DbSet<DiscoveryTask> DiscoveryTasks => Set<DiscoveryTask>();
         public DbSet<User> Users => Set<User>();
+        public DbSet<UserSession> UserSessions => Set<UserSession>();
+        public DbSet<UserRefreshToken> UserRefreshTokens => Set<UserRefreshToken>();
 
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {

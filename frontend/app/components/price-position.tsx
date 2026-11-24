@@ -1,5 +1,7 @@
 'use client';
 
+import { sessionFetch } from '../session-fetch';
+
 import { SearchableSelect } from './searchable-select';
 
 import { useEffect, useState } from 'react';
@@ -14,7 +16,7 @@ const num = (n: number | null | undefined) => n == null ? '—' : new Intl.Numbe
 const time = (s: string | null) => s ? new Intl.DateTimeFormat('fa-IR', { timeZone: 'Asia/Tehran', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(s)) : '—';
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch('/api' + path, { ...options, headers: { 'Content-Type': 'application/json' } });
+  const response = await sessionFetch('/api' + path, { ...options, headers: { 'Content-Type': 'application/json' } });
   if (!response.ok) {
     if (response.status === 401) window.dispatchEvent(new Event('session-expired'));
     const body = await response.json().catch(() => ({}));
@@ -67,7 +69,7 @@ export function PricePositionPage({ brands, onOpenProduct, onNavigate, onNotice 
   }, [brand, q, status, page, refresh]);
   async function download() {
     setDownloading(true);
-    try { const response = await fetch('/api/price-position/excel?' + new URLSearchParams({ brand_id: brand, q, status })); if (!response.ok) { const body = await response.json(); throw new Error(body.detail || 'تهیهٔ اکسل ناموفق بود.'); } const url = URL.createObjectURL(await response.blob()); const a = document.createElement('a'); a.href = url; a.download = 'price-position.xlsx'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); onNotice('اکسل مقایسهٔ قیمت دانلود شد.'); } catch (e) { onNotice((e as Error).message, true); } finally { setDownloading(false); }
+    try { const response = await sessionFetch('/api/price-position/excel?' + new URLSearchParams({ brand_id: brand, q, status })); if (!response.ok) { const body = await response.json(); throw new Error(body.detail || 'تهیهٔ اکسل ناموفق بود.'); } const url = URL.createObjectURL(await response.blob()); const a = document.createElement('a'); a.href = url; a.download = 'price-position.xlsx'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); onNotice('اکسل مقایسهٔ قیمت دانلود شد.'); } catch (e) { onNotice((e as Error).message, true); } finally { setDownloading(false); }
   }
   const count = (key: string) => data?.summary[key] || 0;
   return <>

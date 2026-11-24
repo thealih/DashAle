@@ -1,5 +1,7 @@
 'use client';
 
+import { sessionFetch } from './session-fetch';
+
 import { SearchableSelect } from './components/searchable-select';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -25,7 +27,7 @@ const stale = (value: string | null, minutes: number) => !value || Date.now() - 
 const brandColor: Record<string, string> = { vitalayer: '#678b7c', eudoramax: '#b69c75', elvina: '#9c85b2', isol: '#719cad', vitaplex: '#ba8d77', belfamed: '#85a59a', bergamia: '#b58ca1' };
 
 async function api<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch('/api' + path, { ...options, headers: { 'Content-Type': 'application/json', ...options?.headers } });
+  const response = await sessionFetch('/api' + path, { ...options, headers: { 'Content-Type': 'application/json', ...options?.headers } });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
     if (response.status === 401) window.dispatchEvent(new Event('session-expired'));
@@ -216,7 +218,7 @@ export default function Panel() {
       if (reportSeller && !productId) params.set('seller_id', reportSeller);
       if (startDate && !productId) params.set('start', new Date(startDate + 'T00:00:00+03:30').toISOString());
       if (endDate && !productId) { const d = new Date(endDate + 'T00:00:00+03:30'); d.setTime(d.getTime() + 86400000); params.set('end', d.toISOString()); }
-      const response = await fetch('/api/reports/excel?' + params);
+      const response = await sessionFetch('/api/reports/excel?' + params);
       if (!response.ok) { const d = await response.json(); throw new Error(d.detail || 'تهیهٔ گزارش ناموفق بود.'); }
       const url = URL.createObjectURL(await response.blob()); const a = document.createElement('a'); a.href = url; a.download = `didban-${user?.mode}-${new Date().toISOString().slice(0, 10)}.xlsx`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); inform('فایل اکسل آماده و دانلود شد.');
     } catch (e) { inform((e as Error).message, true); } finally { setBusy(false); }

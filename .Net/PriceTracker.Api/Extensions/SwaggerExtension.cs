@@ -1,4 +1,5 @@
 using Asp.Versioning.ApiExplorer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -12,10 +13,40 @@ namespace PriceTracker.Back.Extensions
         {
             services.AddSwaggerGen(c =>
             {
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT"
+                });
+                c.OperationFilter<PanelAuthorizationOperationFilter>();
+
                 // Set the comments path for the Swagger JSON and UI.
                 var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
                 c.IncludeXmlComments(xmlPath);
+            });
+        }
+    }
+
+    public sealed class PanelAuthorizationOperationFilter : IOperationFilter
+    {
+        public void Apply(OpenApiOperation operation, OperationFilterContext context)
+        {
+            var type = context.MethodInfo.DeclaringType;
+            if (context.MethodInfo.IsDefined(typeof(AllowAnonymousAttribute), true) ||
+                type?.IsDefined(typeof(AllowAnonymousAttribute), true) == true)
+                return;
+            if (!context.MethodInfo.IsDefined(typeof(AuthorizeAttribute), true) &&
+                type?.IsDefined(typeof(AuthorizeAttribute), true) != true)
+                return;
+
+            operation.Security.Add(new OpenApiSecurityRequirement
+            {
+                [new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                }] = []
             });
         }
     }

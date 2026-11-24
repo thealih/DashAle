@@ -28,7 +28,8 @@ builder.Host.UseSerilog((context, configuration) =>
 services.AddInfrastructureServices (configuration);
 services.AddApplicationServices();
 services.AddApiServices();
-services.AddPanelSecurity();
+if (!createUser)
+    services.AddPanelSecurity(configuration, builder.Environment.IsDevelopment());
 services.AddHttpClient<PriceTracker.Domain.IServices.IProductSource, PriceTracker.Infrastracture.Services.SnappShopProductSource>(client =>
 {
     client.BaseAddress = new Uri("https://apix.snappshop.ir/");

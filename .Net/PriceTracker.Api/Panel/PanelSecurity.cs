@@ -3,8 +3,7 @@ using MediatR;
 using PriceTracker.Application.Features.Commands.Users.Create;
 using PriceTracker.Application.Features.Panel;
 using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using PriceTracker.Domain.Models.Enums;
@@ -14,25 +13,37 @@ namespace PriceTracker.Api.Panel;
 
 public static class PanelSecurity
 {
-    public const string Scheme = "PriceTrackerPanel";
+    public const string Scheme = JwtBearerDefaults.AuthenticationScheme;
     public const string Admin = "PanelAdmin";
     public const string LoginLimit = "PanelLogin";
 
-    public static void AddPanelSecurity(this IServiceCollection services)
+    public static void AddPanelSecurity(this IServiceCollection services, IConfiguration configuration, bool development)
     {
-        services.AddAuthentication(Scheme).AddCookie(Scheme, options =>
+        var jwt = new PanelJwt(configuration, development);
+        services.AddSingleton(jwt);
+        services.AddAuthentication(Scheme).AddJwtBearer(Scheme, options =>
         {
-            options.Cookie.Name = "price_tracker_session";
-            options.Cookie.HttpOnly = true;
-            options.Cookie.SameSite = SameSiteMode.Strict;
-            options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-            options.ExpireTimeSpan = TimeSpan.FromHours(12);
-            options.SlidingExpiration = false;
-            options.Events.OnRedirectToLogin = context =>
-                Error(context.HttpContext, 401, "برای ادامه وارد حساب کاربری شوید.");
-            options.Events.OnRedirectToAccessDenied = context =>
-                Error(context.HttpContext, 403, "این عملیات به دسترسی مدیر نیاز دارد.");
-            options.Events.OnValidatePrincipal = ValidateSession;
+            options.MapInboundClaims = false;
+            options.IncludeErrorDetails = false;
+            options.TokenValidationParameters = jwt.ValidationParameters;
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    // An explicit Authorization header always takes precedence over the browser cookie.
+                    if (!context.Request.Headers.ContainsKey("Authorization"))
+                        context.Token = context.Request.Cookies[PanelJwt.CookieName];
+                    return Task.CompletedTask;
+                },
+                OnTokenValidated = ValidateSession,
+                OnChallenge = context =>
+                {
+                    context.HandleResponse();
+                    context.Response.Headers.WWWAuthenticate = "Bearer";
+                    return Error(context.HttpContext, 401, "برای ادامه وارد حساب کاربری شوید.");
+                },
+                OnForbidden = context => Error(context.HttpContext, 403, "این عملیات به دسترسی مدیر نیاز دارد.")
+            };
         });
         services.AddAuthorization(options => options.AddPolicy(Admin, policy =>
             policy.AddAuthenticationSchemes(Scheme).RequireAuthenticatedUser().RequireRole("admin")));
@@ -51,21 +62,31 @@ public static class PanelSecurity
         });
     }
 
-    private static async Task ValidateSession(CookieValidatePrincipalContext context)
+    private static async Task ValidateSession(TokenValidatedContext context)
     {
-        var db = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
-        if (Guid.TryParse(context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier), out var id))
+        var principal = context.Principal!;
+        if (TrySessionIds(principal, out var userId, out var sessionId))
         {
-            var user = await db.Users.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id && x.IsActive,
-                context.HttpContext.RequestAborted);
+            var db = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+            var now = DateTime.UtcNow;
+            var user = await db.UserSessions.AsNoTracking()
+                .Where(x => x.Id == sessionId && x.UserId == userId && x.ExpiresAt > now && x.User.IsActive)
+                .Select(x => new { x.User.UserName, x.User.Role })
+                .SingleOrDefaultAsync(context.HttpContext.RequestAborted);
             if (user != null && IsKnownRole(user.Role) &&
-                context.Principal!.FindFirstValue(ClaimTypes.Role) == RoleName(user.Role) &&
-                context.Principal.FindFirstValue(ClaimTypes.Name) == user.UserName)
+                principal.FindFirstValue(PanelJwt.RoleClaim) == RoleName(user.Role) &&
+                principal.FindFirstValue(PanelJwt.NameClaim) == user.UserName)
                 return;
         }
 
-        context.RejectPrincipal();
-        await context.HttpContext.SignOutAsync(Scheme);
+        context.Fail("The session is no longer valid.");
+    }
+
+    public static bool TrySessionIds(ClaimsPrincipal principal, out Guid userId, out Guid sessionId)
+    {
+        var validUser = Guid.TryParse(principal.FindFirstValue(PanelJwt.SubjectClaim), out userId);
+        var validSession = Guid.TryParse(principal.FindFirstValue(PanelJwt.SessionClaim), out sessionId);
+        return validUser && validSession;
     }
 
     public static bool IsKnownRole(UserRole role) => role is UserRole.Admin or UserRole.Viewer;
