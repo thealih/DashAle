@@ -1,5 +1,15 @@
 # PriceTracker.Back
 
+## دیتابیس آزمایشی
+
+در ویندوز، SQL Server Express LocalDB و ابزار `dotnet-ef` را نصب کنید. از داخل پوشهٔ `.Net` دستور زیر را اجرا کنید:
+
+```powershell
+dotnet ef database update --project .\PriceTracker.Infrastracture --startup-project .\PriceTracker.Api --context AppDbContext
+```
+
+مقصد پیش‌فرض `(localdb)\MSSQLLocalDB` و نام دیتابیس `PriceTrackerDev` است. برای مقصد دیگری مقدار `DB__SqlConnectionString` را در محیط تنظیم کنید. migration اولیه جدول‌ها، هفت برند و تنظیمات پیش‌فرض پایش را می‌سازد. حساب کاربری اولیه و داده‌های نسخهٔ پایتون در این migration وارد نمی‌شوند.
+
 
 
 ## Getting started

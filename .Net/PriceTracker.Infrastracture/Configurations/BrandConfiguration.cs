@@ -13,5 +13,6 @@ public class BrandConfiguration : EntityTypeConfiguration<Brand>
         builder.Property(x => x.Name).HasMaxLength(80);
         builder.Property(x => x.EnglishName).HasMaxLength(80);
         builder.HasIndex(x => x.Slug).IsUnique();
+        builder.HasData(InitialReferenceData.Brands);
     }
 }

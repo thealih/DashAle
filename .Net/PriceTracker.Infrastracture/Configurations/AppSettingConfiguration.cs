@@ -11,5 +11,6 @@ public class AppSettingConfiguration : EntityTypeConfiguration<AppSetting>
         builder.ToTable("AppSettings");
         builder.Property(x => x.Key).HasMaxLength(80);
         builder.HasIndex(x => x.Key).IsUnique();
+        builder.HasData(InitialReferenceData.AppSettings);
     }
 }
