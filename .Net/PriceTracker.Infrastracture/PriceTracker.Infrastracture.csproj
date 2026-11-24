@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PriceTracker.Domain\PriceTracker.Domain.csproj" />
+    <InternalsVisibleTo Include="PriceTracker.Import" />
   </ItemGroup>
 
   <ItemGroup>

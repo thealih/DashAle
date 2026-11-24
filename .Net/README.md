@@ -64,6 +64,27 @@ dotnet run --project .\PriceTracker.Api --launch-profile http
 
 فایل‌ها راست‌چین‌اند، سربرگ ثابت و فیلتر دارند و قیمت‌ها در سلول‌های عددی به تومان ذخیره می‌شوند. زمان‌ها به وقت تهران‌اند. اگر گزارش بیش از ۲۰۰٬۰۰۰ ردیف داشته باشد، سرویس خطای `413` می‌دهد تا بازه یا فیلتر محدود شود. سقف کمتر را می‌توان با `Reports__MaxRows` تنظیم کرد.
 
+### انتقال آزمایشی داده‌های پایتون
+
+از ریشهٔ مخزن با `.\.venv\Scripts\python.exe .\scripts\backup_sqlite.py` یک نسخهٔ پشتیبان سازگار از SQLite بگیرید و مسیر فایل چاپ‌شده را در دستورهای زیر جایگزین کنید. ابزار ورودی را فقط‌خواندنی باز می‌کند. برای انتقال آزمایشی، از یک SQL Server مستقل و نامی با پیشوند `PriceTrackerImport` استفاده کنید. موتور پایش .NET را برای این مقصد خاموش نگه دارید.
+
+از داخل پوشهٔ `.Net` در PowerShell اجرا کنید:
+
+```powershell
+$snapshot = '..\data\backups\live-YYYYMMDD-HHMMSS.db'
+$target = 'PriceTrackerImportTrial'
+$env:PRICE_TRACKER_IMPORT_SQL = "Server=(localdb)\MSSQLLocalDB;Database=$target;Integrated Security=True;TrustServerCertificate=True"
+
+dotnet run --project .\PriceTracker.Import -- --plan $snapshot
+dotnet ef database update --project .\PriceTracker.Infrastracture --startup-project .\PriceTracker.Api --context AppDbContext --connection $env:PRICE_TRACKER_IMPORT_SQL
+dotnet run --project .\PriceTracker.Import -- --apply $snapshot $target
+dotnet run --project .\PriceTracker.Import -- --verify $snapshot $target
+```
+
+`--plan` مبدأ را بررسی می‌کند و به SQL Server وصل نمی‌شود. `--apply` داده‌ها را در یک تراکنش منتقل و تطبیق می‌دهد. اجرای دوبارهٔ همان فایل روی مقصد دست‌نخورده هیچ ردیفی اضافه نمی‌کند. اگر داده‌های انتقال‌یافته در مقصد تغییر کرده باشند، ابزار جایگزینی را رد می‌کند. `--verify` شمار و اثر انگشت محتوای جدول‌ها را دوباره بررسی می‌کند. نتیجهٔ JSON شامل شمار رکوردهاست.
+
+شناسه‌های عمومی محصول و اعلان، حذف نرم، قیمت و زمان مشاهده، وضعیت خواندن و تنظیمات پایش منتقل می‌شوند. سیگنال زنده‌بودن کارگر و اجاره‌های موقت از نو شروع می‌شوند و کارهای کشفی که هنگام پشتیبان‌گیری در حال اجرا بودند دوباره در صف قرار می‌گیرند. حساب‌ها و نشست‌های ورود در SQL Server جداگانه مدیریت می‌شوند.
+
 
 
 ## Getting started
